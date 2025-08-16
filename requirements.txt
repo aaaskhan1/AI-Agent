@@ -1,4 +1,4 @@
-tweepy
 requests
-feedparser
+tweepy
 python-dotenv
+schedule
