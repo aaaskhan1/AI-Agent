@@ -40,7 +40,7 @@ def get_prices():
     return "\n".join(lines)
 
 
-# ====== NEWS FETCHING ======
+
 def get_news():
     feed_url = random.choice(RSS_FEEDS)
     feed = feedparser.parse(feed_url)
@@ -102,3 +102,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
