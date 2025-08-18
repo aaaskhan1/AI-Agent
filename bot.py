@@ -4,10 +4,21 @@ import time
 import requests
 import feedparser
 from datetime import datetime
+from requests_oauthlib import OAuth1
 
 
+X_API_KEY = os.getenv("X_API_KEY")
+X_API_SECRET = os.getenv("X_API_SECRET")
+X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
+X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
 
-X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN")
+auth = OAuth1(
+    X_API_KEY,
+    X_API_SECRET,
+    X_ACCESS_TOKEN,
+    X_ACCESS_SECRET
+)
+
 
 COINS = ["bitcoin", "ethereum", "solana", "ripple", "binancecoin", "tron"]
 
@@ -29,8 +40,8 @@ RSS_FEEDS = [
 ]
 
 
-
 def get_prices():
+    """Fetch crypto prices from CoinGecko"""
     url = f"https://api.coingecko.com/api/v3/simple/price?ids={','.join(COINS)}&vs_currencies=usd"
     res = requests.get(url).json()
     lines = []
@@ -40,8 +51,8 @@ def get_prices():
     return "\n".join(lines)
 
 
-
 def get_news():
+    """Fetch random crypto news from RSS feeds"""
     feed_url = random.choice(RSS_FEEDS)
     feed = feedparser.parse(feed_url)
     if not feed.entries:
@@ -56,15 +67,11 @@ def get_news():
     return text
 
 
-
 def post_tweet(content):
+    """Post a tweet using OAuth1"""
     url = "https://api.twitter.com/2/tweets"
-    headers = {
-        "Authorization": f"Bearer {X_BEARER_TOKEN}",
-        "Content-Type": "application/json"
-    }
     payload = {"text": content}
-    response = requests.post(url, headers=headers, json=payload)
+    response = requests.post(url, auth=auth, json=payload)
 
     if response.status_code == 201:
         print("✅ Posted:", content)
@@ -72,10 +79,10 @@ def post_tweet(content):
         print("❌ Error posting:", response.status_code, response.text)
 
 
-
 def run_bot():
+    """Run alternating posts (price + news)"""
     posts_today = 0
-    max_posts = 14  
+    max_posts = 14
     last_type = "news"
 
     while posts_today < max_posts:
@@ -93,8 +100,7 @@ def run_bot():
             last_type = "news"
 
         posts_today += 1
-       
-        wait_time = random.randint(3600, 7200)
+        wait_time = random.randint(3600, 7200)  # 1-2 hours
         print(f"⏳ Waiting {wait_time/60:.1f} minutes before next post...")
         time.sleep(wait_time)
 
@@ -102,4 +108,3 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
-
