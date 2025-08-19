@@ -22,21 +22,21 @@ auth = OAuth1(
 
 
 COINS = {
-    "Bitcoin": "BTC",
-    "Ethereum": "ETH",
-    "Solana": "SOL",
-    "Ripple": "XRP",
-    "Binancecoin": "BNB",
-    "Tron": "TRX",
-    "Sui": "SUI",
-    "Hyperliquid": "HYPE",
-    "Cardano": "ADA",
-    "Chainlink": "LINK",
-    "Avalanche": "AVAX",
-    "Toncoin": "TON",
-    "Polkadot": "DOT",
-    "Monero": "XMR",
-    "Litecoin": "LTC"
+    "bitcoin": "BTC",
+    "ethereum": "ETH",
+    "solana": "SOL",
+    "ripple": "XRP",
+    "binancecoin": "BNB",
+    "tron": "TRX",
+    "sui": "SUI",
+    "hyperliquid": "HYPE",
+    "cardano": "ADA",
+    "chainlink": "LINK",
+    "avalanche": "AVAX",
+    "toncoin": "TON",
+    "polkadot": "DOT",
+    "monero": "XMR",
+    "litecoin": "LTC"
 }
 
 
@@ -153,8 +153,11 @@ def run_bot():
     while posts_today < max_posts:
         if last_type == "news":
             prices = get_prices()
-            content = f"Crypto Price Update:\n{prices}"
-            post_tweet(content)
+            if prices.strip():
+                content = f"Crypto Price Update:\n{prices}"
+                post_tweet(content)
+            else:
+                print("⚠️ Price data not fetched, skipping price post...")
             last_type = "price"
         else:
             news = get_news()
@@ -166,6 +169,7 @@ def run_bot():
         wait_time = random.randint(3600, 7200) 
         print(f"⏳ Waiting {wait_time/60:.1f} minutes before next post...")
         time.sleep(wait_time)
+
 
 
 if __name__ == "__main__":
