@@ -21,21 +21,21 @@ auth = OAuth1(
 
 
 COINS = {
-    "bitcoin": "BTC",
-    "ethereum": "ETH",
-    "solana": "SOL",
-    "ripple": "XRP",
-    "binancecoin": "BNB",
-    "tron": "TRX",
-    "sui": "SUI",
-    "hyperliquid": "HYPE",
-    "cardano": "ADA",
-    "chainlink": "LINK",
-    "avalanche-2": "AVAX",
-    "the-open-network": "TON",
-    "polkadot": "DOT",
-    "monero": "XMR",
-    "litecoin": "LTC"
+    "Bitcoin": "BTC",
+    "Ethereum": "ETH",
+    "Solana": "SOL",
+    "Ripple": "XRP",
+    "Binancecoin": "BNB",
+    "Tron": "TRX",
+    "Sui": "SUI",
+    "Hyperliquid": "HYPE",
+    "Cardano": "ADA",
+    "Chainlink": "LINK",
+    "Avalanche": "AVAX",
+    "Toncoin": "TON",
+    "Polkadot": "DOT",
+    "Monero": "XMR",
+    "Litecoin": "LTC"
 }
 
 RSS_FEEDS = [
@@ -124,4 +124,5 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
 
