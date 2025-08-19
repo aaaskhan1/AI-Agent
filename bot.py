@@ -20,7 +20,23 @@ auth = OAuth1(
 )
 
 
-COINS = ["bitcoin", "ethereum", "solana", "ripple", "binancecoin", "tron"]
+COINS = {
+    "bitcoin": "BTC",
+    "ethereum": "ETH",
+    "solana": "SOL",
+    "ripple": "XRP",
+    "binancecoin": "BNB",
+    "tron": "TRX",
+    "sui": "SUI",
+    "hyperliquid": "HYPE",
+    "cardano": "ADA",
+    "chainlink": "LINK",
+    "avalanche-2": "AVAX",
+    "the-open-network": "TON",
+    "polkadot": "DOT",
+    "monero": "XMR",
+    "litecoin": "LTC"
+}
 
 RSS_FEEDS = [
     "https://decrypt.co/feed",
@@ -41,13 +57,13 @@ RSS_FEEDS = [
 
 
 def get_prices():
-    """Fetch crypto prices from CoinGecko"""
-    url = f"https://api.coingecko.com/api/v3/simple/price?ids={','.join(COINS)}&vs_currencies=usd"
+    url = f"https://api.coingecko.com/api/v3/simple/price?ids={','.join(COINS.keys())}&vs_currencies=usd"
     res = requests.get(url).json()
     lines = []
-    for coin in COINS:
-        price = res[coin]["usd"]
-        lines.append(f"{coin.capitalize()}: ${price:,.2f}")
+    for coin_id, symbol in COINS.items():
+        if coin_id in res:
+            price = res[coin_id]["usd"]
+            lines.append(f"{symbol}: ${price:,.2f}")
     return "\n".join(lines)
 
 
@@ -108,3 +124,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
