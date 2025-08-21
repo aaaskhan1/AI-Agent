@@ -5,13 +5,15 @@ import requests
 import feedparser
 from datetime import datetime
 from requests_oauthlib import OAuth1
-from bs4 import BeautifulSoup
+import re
+from openai import OpenAI
 
 
 X_API_KEY = os.getenv("X_API_KEY")
 X_API_SECRET = os.getenv("X_API_SECRET")
 X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
 X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 auth = OAuth1(
     X_API_KEY,
@@ -19,6 +21,8 @@ auth = OAuth1(
     X_ACCESS_TOKEN,
     X_ACCESS_SECRET
 )
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 COINS = {
@@ -89,23 +93,14 @@ def get_prices():
     return "\n".join(lines)
 
 
-def clean_html(raw_html):
-    """Remove HTML tags from feed summaries"""
-    return BeautifulSoup(raw_html, "html.parser").get_text()
-
-
-
-import re
-
 def get_news():
-    """Fetch latest crypto news (random from latest entries, no links)"""
+    """Fetch and summarize news using OpenAI"""
     feed_url = random.choice(RSS_FEEDS)
     feed = feedparser.parse(feed_url)
 
     if not feed.entries:
         return None
 
-    
     latest_entries = sorted(
         feed.entries,
         key=lambda e: getattr(e, "published_parsed", datetime.utcnow()),
@@ -113,24 +108,29 @@ def get_news():
     )[:5]
 
     entry = random.choice(latest_entries)
-    title = entry.title
-    summary = getattr(entry, "summary", "")
+    raw_text = f"{entry.title} — {getattr(entry, 'summary', '')}"
 
-    text = f"{title} — {summary}"
-    text = text.replace("\n", " ").strip()
-
-    
-    text = re.sub(r"http\S+", "", text)
+    raw_text = raw_text.replace("\n", " ").strip()
+    raw_text = re.sub(r"http\S+", "", raw_text)
+    raw_text = " ".join(raw_text.split())
 
     
-    text = " ".join(text.split())
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You summarize crypto news."},
+            {"role": "user", "content": f"Summarize this in simple English & humanly style, max 280 characters:\n\n{raw_text}"}
+        ],
+        max_tokens=100
+    )
 
-    if len(text) > 280:
-        text = text[:277] + "..."
+    summary = response.choices[0].message.content.strip()
 
-    return text
+    
+    if len(summary) > 280:
+        summary = summary[:277] + "..."
 
-
+    return summary
 
 
 def post_tweet(content):
@@ -139,13 +139,12 @@ def post_tweet(content):
     response = requests.post(url, auth=auth, json=payload)
 
     if response.status_code == 201:
-        print("Posted:", content)
+        print("✅ Posted:", content)
     else:
-        print("Error posting:", response.status_code, response.text)
+        print("❌ Error posting:", response.status_code, response.text)
 
 
 def run_bot():
-    """Run alternating posts (price + news)"""
     posts_today = 0
     max_posts = 14
     last_type = "news"
@@ -154,7 +153,7 @@ def run_bot():
         if last_type == "news":
             prices = get_prices()
             if prices.strip():
-                content = f"Crypto Price Update:\n{prices}"
+                content = f"Crypto Price Update:\n\n{prices}"
                 post_tweet(content)
             else:
                 print("⚠️ Price data not fetched, skipping price post...")
@@ -166,10 +165,9 @@ def run_bot():
             last_type = "news"
 
         posts_today += 1
-        wait_time = random.randint(3600, 7200) 
+        wait_time = random.randint(3600, 7200)
         print(f"⏳ Waiting {wait_time/60:.1f} minutes before next post...")
         time.sleep(wait_time)
-
 
 
 if __name__ == "__main__":
