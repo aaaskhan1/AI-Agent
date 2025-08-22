@@ -74,35 +74,89 @@ def get_prices():
 
 
 def get_news():
-    """Fetch and summarize news using OpenAI"""
+    """Fetch crypto news: Try RSS → APIs → OpenAI fallback"""
+
+    # -------------------
+    # 1. Try RSS feeds
+    # -------------------
     valid_feeds = []
     for url in RSS_FEEDS:
         feed = feedparser.parse(url)
         if feed.entries:
             valid_feeds.append(feed)
 
-    if not valid_feeds:
-        return "⚠️ No fresh crypto news found at the moment."
+    if valid_feeds:
+        feed = random.choice(valid_feeds)
+        latest_entries = sorted(
+            feed.entries,
+            key=lambda e: getattr(e, "published_parsed", datetime.utcnow()),
+            reverse=True
+        )[:5]
+        entry = random.choice(latest_entries)
+        raw_text = f"{entry.title} — {getattr(entry, 'summary', '')}"
+    else:
+        raw_text = None
 
-    
-    feed = random.choice(valid_feeds)
+       # -------------------
+    # 2. Try APIs if RSS fails
+    # -------------------
+    if not raw_text:
+        api_sources = [
+            f"https://cryptonewsapi.online/api/v1?tickers=BTC,ETH&items=1&token={os.getenv('CRYPTO_NEWS_API_KEY')}",
+            f"https://api.thenewsapi.net/v1/news/top?categories=cryptocurrency&language=en&api_token={os.getenv('THENEWS_API_KEY')}",
+            f"https://apitube.io/crypto/news?limit=1&apikey={os.getenv('APITUBE_API_KEY')}"
+        ]
 
-    
-    latest_entries = sorted(
-        feed.entries,
-        key=lambda e: getattr(e, "published_parsed", datetime.utcnow()),
-        reverse=True
-    )[:5]
+        for api_url in api_sources:
+            try:
+                res = requests.get(api_url, timeout=10).json()
+                if "data" in res and res["data"]:
+                    article = res["data"][0]
+                    raw_text = article.get("title", "") + " — " + article.get("description", "")
+                    break
+                elif "articles" in res and res["articles"]:
+                    article = res["articles"][0]
+                    raw_text = article.get("title", "") + " — " + article.get("description", "")
+                    break
+            except Exception as e:
+                print(f"⚠️ API failed: {api_url} ({e})")
+                continue
 
-    entry = random.choice(latest_entries)
-    raw_text = f"{entry.title} — {getattr(entry, 'summary', '')}"
 
-    
+    # -------------------
+    # 3. Try OpenAI if APIs fail
+    # -------------------
+    if not raw_text:
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You generate crypto news."},
+                    {"role": "user", "content": "One latest news related to crypto."}
+                ],
+                max_tokens=150
+            )
+            raw_text = response.choices[0].message.content.strip()
+        except Exception as e:
+            print("⚠️ OpenAI fallback failed:", e)
+
+    # -------------------
+    # 4. If everything fails → retry logic
+    # -------------------
+    if not raw_text:
+        for delay in [300, 120, 600]:  # 5 min → 2 min → 10 min
+            print(f"⏳ No news found, retrying in {delay//60} minutes...")
+            time.sleep(delay)
+            return get_news()
+        return None  # Final fail → skip news
+
+    # -------------------
+    # 5. Clean & summarize with OpenAI
+    # -------------------
     raw_text = raw_text.replace("\n", " ").strip()
     raw_text = re.sub(r"http\S+", "", raw_text)
     raw_text = " ".join(raw_text.split())
 
-    
     prompt = """
     1. Remove all HTML tags and links.
     2. Write it in simple human English.
@@ -120,11 +174,11 @@ def get_news():
 
     summary = response.choices[0].message.content.strip()
 
-    
     if len(summary) > 280:
         summary = summary[:280]
 
     return summary
+
 
 
 def post_tweet(content):
@@ -166,4 +220,5 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot() 
+
 
