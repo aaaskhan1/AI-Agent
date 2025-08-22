@@ -46,39 +46,19 @@ COINS = {
 
 RSS_FEEDS = [
     "https://decrypt.co/feed",
-    "https://www.coindesk.com/arc/outboundfeeds/rss/",
-    "https://www.theblock.co/rss",
+    "https://www.coindesk.com/arc/outboundfeeds/rss/",  
     "https://cointelegraph.com/rss",
     "https://bitcoinmagazine.com/feed",
     "https://cryptoslate.com/feed/",
-    "https://beincrypto.com/feed/",
     "https://www.newsbtc.com/feed/",
-    "https://ambcrypto.com/feed/",
-    "https://u.today/rss",
-    "https://newsletter.banklesshq.com/feed",
-    "https://blockworks.co/feed",
-    "https://www.dlnews.com/rss",
     "https://protos.com/feed/",
     "https://bitcoinist.com/feed",
     "https://cryptopotato.com/feed",
-    "https://cryptobriefing.com/feed",
-    "https://crypto.news/feed",
     "https://www.ccn.com/news/crypto-news/feeds/",
     "https://coinjournal.net/news/feed/",
     "https://cryptonews.com/news/feed",
     "https://web3wire.org/category/web3/feed/gn",
-    "https://blog.chain.link/feed",
-    "https://avc.com/category/web3/feed",
-    "https://web3daily.co/articles?format=rss",
-    "https://thenewscrypto.com/feed",
-    "https://www.dlnews.com/feed/regulation",
-    "https://www.coindesk.com/policy/rss",
-    "https://blockworks.co/feed/regulation",
-    "https://feeds.reuters.com/reuters/cryptocurrencyNews",
-    "https://www.ft.com/crypto?format=rss",
-    "https://www.bloomberg.com/feed/podcast/crypto.rss",
-    "https://blogs.imf.org/feed/",
-    "https://www.weforum.org/agenda/archive/blockchain.rss"
+    "https://thenewscrypto.com/feed"
 ]
 
 
@@ -115,22 +95,27 @@ def get_news():
     raw_text = " ".join(raw_text.split())
 
     
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You summarize crypto news."},
-            {"role": "user", "content": f"Summarize this in simple English & humanly style, max 280 characters:\n\n{raw_text}"}
-        ],
-        max_tokens=100
-    )
+Prompt = """
+1. Remove all HTML tags and links.
+2. Write it in simple human English
+3. Keep it concise with summaries of max 280 characters
+"""
 
-    summary = response.choices[0].message.content.strip()
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You summarize crypto news."},
+        {"role": "user", "content": f"{Prompt}\n\n{raw_text}"}
+    ],
+    max_tokens=100
+)
 
-    
-    if len(summary) > 280:
-        summary = summary[:277] + "..."
+summary = response.choices[0].message.content.strip()
 
-    return summary
+if len(summary) > 280:
+    summary = summary[:280]
+
+return summary
 
 
 def post_tweet(content):
@@ -171,4 +156,4 @@ def run_bot():
 
 
 if __name__ == "__main__":
-    run_bot()
+    run_bot() 
