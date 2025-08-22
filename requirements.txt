@@ -1,5 +1,4 @@
-feedparser
 requests
+feedparser
 requests_oauthlib
-open
-
+openai
