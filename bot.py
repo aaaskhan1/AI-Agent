@@ -75,12 +75,19 @@ def get_prices():
 
 def get_news():
     """Fetch and summarize news using OpenAI"""
-    feed_url = random.choice(RSS_FEEDS)
-    feed = feedparser.parse(feed_url)
+    valid_feeds = []
+    for url in RSS_FEEDS:
+        feed = feedparser.parse(url)
+        if feed.entries:
+            valid_feeds.append(feed)
 
-    if not feed.entries:
-        return None
+    if not valid_feeds:
+        return "⚠️ No fresh crypto news found at the moment."
 
+    
+    feed = random.choice(valid_feeds)
+
+    
     latest_entries = sorted(
         feed.entries,
         key=lambda e: getattr(e, "published_parsed", datetime.utcnow()),
@@ -90,32 +97,34 @@ def get_news():
     entry = random.choice(latest_entries)
     raw_text = f"{entry.title} — {getattr(entry, 'summary', '')}"
 
+    
     raw_text = raw_text.replace("\n", " ").strip()
     raw_text = re.sub(r"http\S+", "", raw_text)
     raw_text = " ".join(raw_text.split())
 
     
-Prompt = """
-1. Remove all HTML tags and links.
-2. Write it in simple human English
-3. Keep it concise with summaries of max 280 characters
-"""
+    prompt = """
+    1. Remove all HTML tags and links.
+    2. Write it in simple human English.
+    3. Keep it concise with summaries of max 280 characters.
+    """
 
-response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "system", "content": "You summarize crypto news."},
-        {"role": "user", "content": f"{Prompt}\n\n{raw_text}"}
-    ],
-    max_tokens=100
-)
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You summarize crypto news."},
+            {"role": "user", "content": f"{prompt}\n\n{raw_text}"}
+        ],
+        max_tokens=120
+    )
 
-summary = response.choices[0].message.content.strip()
+    summary = response.choices[0].message.content.strip()
 
-if len(summary) > 280:
-    summary = summary[:280]
+    
+    if len(summary) > 280:
+        summary = summary[:280]
 
-return summary
+    return summary
 
 
 def post_tweet(content):
@@ -157,3 +166,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot() 
+
