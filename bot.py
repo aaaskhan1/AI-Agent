@@ -193,32 +193,37 @@ def post_tweet(content):
 
 
 def run_bot():
-    posts_today = 0
-    max_posts = 14
-    last_type = "news"
+    # strict repeating cycle
+    pattern = ["price", "news", "news", "price", "news", "news", "price"]
+    step = 0
 
-    while posts_today < max_posts:
-        if last_type == "news":
+    while True: 
+        post_type = pattern[step % len(pattern)]
+
+        if post_type == "price":
             prices = get_prices()
             if prices.strip():
                 content = f"Crypto Price Update:\n\n{prices}"
                 post_tweet(content)
             else:
                 print("⚠️ Price data not fetched, skipping price post...")
-            last_type = "price"
-        else:
+
+        elif post_type == "news":
             news = get_news()
             if news:
                 post_tweet(news)
-            last_type = "news"
+            else:
+                print("⚠️ News not fetched, skipping news post...")
 
-        posts_today += 1
-        wait_time = random.randint(3600, 7200)
+        step += 1
+
+        
+        wait_time = random.randint(3600, 6500)
         print(f"⏳ Waiting {wait_time/60:.1f} minutes before next post...")
         time.sleep(wait_time)
 
-
 if __name__ == "__main__":
     run_bot() 
+
 
 
