@@ -6,6 +6,7 @@ import feedparser
 from datetime import datetime
 from requests_oauthlib import OAuth1
 import re
+import bs4
 from openai import OpenAI
 
 
@@ -58,7 +59,8 @@ RSS_FEEDS = [
     "https://coinjournal.net/news/feed/",
     "https://cryptonews.com/news/feed",
     "https://web3wire.org/category/web3/feed/gn",
-    "https://thenewscrypto.com/feed"
+    "https://thenewscrypto.com/feed",
+    "https://cointelegraph.com/rss"
 ]
 
 
@@ -73,12 +75,42 @@ def get_prices():
     return "\n".join(lines)
 
 
+def extract_article(entry):
+    """Decide whether entry has full article, summary, or just headline. If headline only → scrape link."""
+
+    raw_text = ""
+
+    
+    if hasattr(entry, "content") and entry.content:
+        raw_text = entry.content[0].value.strip()
+
+    
+    elif hasattr(entry, "summary") and len(entry.summary.strip()) > 300:
+        raw_text = entry.summary.strip()
+
+   
+    else:
+        try:
+            article_url = entry.link
+            html = requests.get(article_url, timeout=10).text
+            soup = bs4.BeautifulSoup(html, "html.parser")
+
+            
+            paragraphs = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
+            raw_text = " ".join(paragraphs[:5])  
+        except Exception as e:
+            print(f"⚠️ Failed to scrape {entry.link}: {e}")
+            raw_text = entry.title + " — " + getattr(entry, "summary", "")
+
+    return raw_text
+
+
 def get_news():
     """Fetch crypto news: Try RSS → APIs → OpenAI fallback"""
 
-    # -------------------
-    # 1. Try RSS feeds
-    # -------------------
+    raw_text = None
+
+    
     valid_feeds = []
     for url in RSS_FEEDS:
         feed = feedparser.parse(url)
@@ -93,13 +125,9 @@ def get_news():
             reverse=True
         )[:5]
         entry = random.choice(latest_entries)
-        raw_text = f"{entry.title} — {getattr(entry, 'summary', '')}"
-    else:
-        raw_text = None
+        raw_text = extract_article(entry)
 
-       # -------------------
-    # 2. Try APIs if RSS fails
-    # -------------------
+    
     if not raw_text:
         api_sources = [
             f"https://cryptonewsapi.online/api/v1?tickers=BTC,ETH&items=1&token={os.getenv('CRYPTO_NEWS_API_KEY')}",
@@ -122,10 +150,7 @@ def get_news():
                 print(f"⚠️ API failed: {api_url} ({e})")
                 continue
 
-
-    # -------------------
-    # 3. Try OpenAI if APIs fail
-    # -------------------
+    
     if not raw_text:
         try:
             response = client.chat.completions.create(
@@ -140,19 +165,15 @@ def get_news():
         except Exception as e:
             print("⚠️ OpenAI fallback failed:", e)
 
-    # -------------------
-    # 4. If everything fails → retry logic
-    # -------------------
+    
     if not raw_text:
-        for delay in [300, 120, 600]:  # 5 min → 2 min → 10 min
+        for delay in [300, 120, 600]:
             print(f"⏳ No news found, retrying in {delay//60} minutes...")
             time.sleep(delay)
             return get_news()
-        return None  # Final fail → skip news
+        return None  
 
-    # -------------------
-    # 5. Clean & summarize with OpenAI
-    # -------------------
+   
     raw_text = raw_text.replace("\n", " ").strip()
     raw_text = re.sub(r"http\S+", "", raw_text)
     raw_text = " ".join(raw_text.split())
@@ -181,6 +202,7 @@ def get_news():
 
 
 
+
 def post_tweet(content):
     url = "https://api.twitter.com/2/tweets"
     payload = {"text": content}
@@ -193,12 +215,11 @@ def post_tweet(content):
 
 
 def run_bot():
-    # strict repeating cycle
-    pattern = ["price", "news", "news", "price", "news", "news", "price"]
-    step = 0
+    post_cycle = ["price", "news", "news", "news"]  
+    cycle_index = 0  
 
-    while True: 
-        post_type = pattern[step % len(pattern)]
+    while True:  
+        post_type = post_cycle[cycle_index]
 
         if post_type == "price":
             prices = get_prices()
@@ -215,15 +236,14 @@ def run_bot():
             else:
                 print("⚠️ News not fetched, skipping news post...")
 
-        step += 1
+       
+        cycle_index = (cycle_index + 1) % len(post_cycle)
 
         
-        wait_time = random.randint(3600, 6500)
+        wait_time = random.randint(3600, 7000)
         print(f"⏳ Waiting {wait_time/60:.1f} minutes before next post...")
         time.sleep(wait_time)
 
+
 if __name__ == "__main__":
     run_bot() 
-
-
-
