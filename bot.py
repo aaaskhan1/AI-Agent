@@ -182,8 +182,8 @@ def get_news():
     You are a helpful assistant. Summarize the following news:
     1. Remove all HTML tags and links
     2. Write it in simple humanly English
-    3. Keep it concise with summaries of max 280 characters
-    4. you can't exceed more than 280 chracters
+    3. Keep it concise with summaries of max 280 characters with meaningful content
+    4. you can't exceed more than 280 chracters (max no of characters supported by the X posts)
     """
 
     response = client.chat.completions.create(
@@ -249,4 +249,5 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot() 
+
 
