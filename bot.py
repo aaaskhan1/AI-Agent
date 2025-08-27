@@ -186,7 +186,7 @@ def get_news():
     4. you can't exceed more than 280 chracters (max no of characters supported by the X posts)
     """
 
-    response = client.chat.completions.create(
+        response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You summarize crypto news."},
@@ -195,12 +195,14 @@ def get_news():
         max_tokens=120
     )
 
-    summary = response.choices[0].message.content.strip()
+    summary = response.choices[0].message["content"].strip()
 
+    # Hard enforce 280 chars max
     if len(summary) > 280:
-        summary = summary[:280]
+        summary = summary[: summary.rfind(" ", 0, 280)]
 
     return summary
+
 
 
 
@@ -249,5 +251,6 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot() 
+
 
 
