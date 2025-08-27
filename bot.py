@@ -179,9 +179,11 @@ def get_news():
     raw_text = " ".join(raw_text.split())
 
     prompt = """
-    1. Remove all HTML tags and links.
-    2. Write it in simple human English.
-    3. Keep it concise with summaries of max 280 characters.
+    You are a helpful assistant. Summarize the following news:
+    1. Remove all HTML tags and links
+    2. Write it in simple humanly English
+    3. Keep it concise with summaries of max 280 characters
+    4. you can't exceed more than 280 chracters
     """
 
     response = client.chat.completions.create(
@@ -247,3 +249,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot() 
+
