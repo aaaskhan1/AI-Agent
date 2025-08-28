@@ -207,7 +207,7 @@ def process_news_content(raw_text):
         
         summary = response.choices[0].message.content.strip()
         
-        # Ensure 280 character limit with better truncation
+
         if len(summary) > 280:
             summary = summary[:277] + "..."
             
@@ -238,7 +238,7 @@ def post_tweet(content, max_retries=3):
             logger.error(f"Attempt {attempt + 1} to post tweet failed: {e}")
             
         if attempt < max_retries - 1:
-            time.sleep(60 * (attempt + 1))  # Wait before retry
+            time.sleep(60 * (attempt + 1))  
     
     return False
 
@@ -260,7 +260,7 @@ def run_bot():
                 logger.info("Fetching price update...")
                 prices = get_prices()
                 if prices:
-                    content = f" Crypto Price Update:\n\n{prices}\n\n
+                    content = f" Crypto Price Update:\n\n{prices}\n"
                     success = post_tweet(content)
                 else:
                     logger.warning("Price data not available, skipping...")
@@ -313,4 +313,5 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         sys.exit(1)
+
 
