@@ -121,7 +121,7 @@ def get_news():
         feed = random.choice(valid_feeds)
         latest_entries = sorted(
             feed.entries,
-            key=lambda e: getattr(e, "published_parsed", datetime.utcnow()),
+            key=lambda e: getattr(e, "published_parsed", time.gmtime(0),
             reverse=True
         )[:5]
         entry = random.choice(latest_entries)
@@ -186,24 +186,22 @@ def get_news():
     4. you can't exceed more than 280 chracters (max no of characters supported by the X posts)
     """
 
-    response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "system", "content": "You summarize crypto news."},
-        {"role": "user", "content": f"{prompt}\n\n{raw_text}"}
-    ],
-    max_tokens=120
-)
+       response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You summarize crypto news."},
+            {"role": "user", "content": f"{prompt}\n\n{raw_text}"}
+        ],
+        max_tokens=120
+    )
 
-summary = response.choices[0].message.content.strip()
+    summary = response.choices[0].message.content.strip()
 
-
-
-    
     if len(summary) > 280:
         summary = summary[: summary.rfind(" ", 0, 280)]
 
     return summary
+
 
 
 
@@ -251,3 +249,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
