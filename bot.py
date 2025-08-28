@@ -260,7 +260,7 @@ def run_bot():
                 logger.info("Fetching price update...")
                 prices = get_prices()
                 if prices:
-                    content = f"💰 Crypto Price Update:\n\n{prices}\n\n#Crypto #Prices"
+                    content = f" Crypto Price Update:\n\n{prices}\n\n
                     success = post_tweet(content)
                 else:
                     logger.warning("Price data not available, skipping...")
@@ -313,3 +313,4 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         sys.exit(1)
+
