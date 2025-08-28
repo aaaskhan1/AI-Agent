@@ -121,7 +121,7 @@ def get_news():
         feed = random.choice(valid_feeds)
         latest_entries = sorted(
             feed.entries,
-            key=lambda e: getattr(e, "published_parsed", time.gmtime(0),
+            key=lambda e: getattr(e, "published_parsed", time.gmtime(0)),
             reverse=True
         )[:5]
         entry = random.choice(latest_entries)
@@ -249,4 +249,5 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
 
