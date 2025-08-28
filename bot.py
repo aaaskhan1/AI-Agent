@@ -10,7 +10,7 @@ from datetime import datetime
 from requests_oauthlib import OAuth1
 import re
 import bs4
-from openai import OpenAI
+import openai
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -41,7 +41,7 @@ if not all(required_vars):
     sys.exit(1)
 
 auth = OAuth1(X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET)
-client = OpenAI(api_key=OPENAI_API_KEY)
+openai.api_key = OPENAI_API_KEY
 
 COINS = {
     "bitcoin": "BTC",
@@ -196,16 +196,16 @@ def process_news_content(raw_text):
         - Include key facts only
         - No investment advice"""
         
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You create concise crypto news summaries."},
-                {"role": "user", "content": f"{prompt}\n\n{raw_text}"}
-            ],
-            max_tokens=100
-        )
-        
-        summary = response.choices[0].message.content.strip()
+        response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": "You create concise crypto news summaries."},
+        {"role": "user", "content": f"{prompt}\n\n{raw_text}"}
+    ],
+    max_tokens=100
+)
+summary = response.choices[0].message["content"].strip()
+
         
 
         if len(summary) > 280:
@@ -313,5 +313,6 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         sys.exit(1)
+
 
 
