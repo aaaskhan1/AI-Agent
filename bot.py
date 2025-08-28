@@ -187,15 +187,17 @@ def get_news():
     """
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You summarize crypto news."},
-            {"role": "user", "content": f"{prompt}\n\n{raw_text}"}
-        ],
-        max_tokens=120
-    )
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You summarize crypto news."},
+        {"role": "user", "content": f"{prompt}\n\n{raw_text}"}
+    ],
+    max_tokens=120
+)
 
-    summary = response.choices[0].message["content"].strip()
+summary = response.choices[0].message.content.strip()
+
+
 
     # Hard enforce 280 chars max
     if len(summary) > 280:
@@ -249,6 +251,7 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot() 
+
 
 
 
