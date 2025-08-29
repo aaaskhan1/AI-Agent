@@ -186,7 +186,8 @@ def get_news():
     4. you can't exceed more than 280 chracters (max no of characters supported by the X posts)
     """
 
-       response = client.chat.completions.create(
+
+        response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You summarize crypto news."},
@@ -249,5 +250,6 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
 
 
